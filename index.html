@@ -1,0 +1,352 @@
+import React, { useState } from 'react';
+import { MessageCircle, User, Award, RefreshCw, CheckCircle } from 'lucide-react';
+
+const NursingCommunicationBot = () => {
+  const [currentScenario, setCurrentScenario] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [responses, setResponses] = useState([]);
+  const [studentResponse, setStudentResponse] = useState('');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+
+  const scenarios = [
+    {
+      title: "Pre-operative Patient",
+      setting: "Medical-Surgical Unit",
+      patientName: "Mrs. Johnson",
+      patientAge: 68,
+      condition: "Scheduled for gallbladder surgery tomorrow morning",
+      mood: "anxious and asking many questions",
+      steps: [
+        {
+          situation: "You enter Mrs. Johnson's room to do evening vitals. She immediately says: 'Nurse, I'm so worried about tomorrow. What if something goes wrong during surgery?'",
+          goodResponses: [
+            "I understand you're feeling anxious about tomorrow's surgery, Mrs. Johnson. It's completely normal to have these concerns. Would you like to talk about what's worrying you most?",
+            "Your feelings are very understandable, Mrs. Johnson. Surgery can feel scary. Let me sit with you for a moment and we can discuss your concerns together.",
+            "I can see you're worried, and that's okay. Many patients feel this way before surgery. What specific concerns do you have that I might be able to help address?"
+          ],
+          feedback: {
+            excellent: "Excellent! You validated her emotions, used therapeutic communication, and offered specific support. Your response shows empathy and builds trust.",
+            good: "Good start - you acknowledged her concern. To improve: Try using 'I' statements, ask open-ended questions, and specifically validate her feelings as 'normal' or 'understandable.'",
+            needsWork: "This response needs work. Avoid phrases like 'don't worry' or 'everything will be fine' - these dismiss the patient's feelings. Instead, validate emotions first, then offer to discuss specific concerns. Use therapeutic communication techniques."
+          }
+        },
+        {
+          situation: "After discussing her fears, Mrs. Johnson asks: 'Will you be here when I get back from surgery? I feel more comfortable when you're taking care of me.'",
+          goodResponses: [
+            "I'm honored that you feel comfortable with me, Mrs. Johnson. While I may not be your nurse tomorrow due to scheduling, I'll make sure to communicate your preferences to the team and check on you when I'm back.",
+            "Thank you for telling me that - it means a lot. I'll do my best to see you when you return, and I'll make sure the nurses caring for you know how to best support you.",
+            "I'm glad I've been able to help you feel more at ease. Even if I'm not here immediately when you return, the nursing team will take excellent care of you, and I'll check on your progress."
+          ],
+          feedback: {
+            excellent: "Excellent! You honored the therapeutic relationship while being honest about limitations. You also ensured continuity of care - this builds trust and reduces anxiety.",
+            good: "Good approach - you showed appreciation for the relationship. To strengthen this: Be more specific about how you'll ensure continuity of care and acknowledge the importance of consistent caregivers for patient comfort.",
+            needsWork: "This response could be improved. Avoid making promises you can't keep ('I'll definitely be here'). Instead, acknowledge the relationship's importance, be honest about scheduling realities, and explain how you'll ensure quality care continues."
+          }
+        }
+      ]
+    },
+    {
+      title: "Pediatric Patient",
+      setting: "Pediatric Unit",
+      patientName: "Tommy",
+      patientAge: 7,
+      condition: "Admitted with pneumonia, day 3 of hospitalization",
+      mood: "homesick and resistant to treatments",
+      steps: [
+        {
+          situation: "You need to give Tommy his antibiotic, but he crosses his arms and says: 'I don't want any more medicine! I want to go home! Where's my mom?'",
+          goodResponses: [
+            "I can see you're really missing home and your mom, Tommy. That must feel really hard. Your mom will be back soon, and this medicine is going to help you get better so you can go home faster. Can you help me be brave?",
+            "You know what, Tommy? I bet you're the bravest kid on this whole floor. I know you miss your mom - she'll be back after lunch. This medicine is like superhero power for fighting the germs. Want to show me how strong you are?",
+            "I understand you want to go home, Tommy. I would want to go home too if I were you. This medicine is going to help your body fight off the infection so you can get strong enough to go home. What would make taking this medicine easier for you?"
+          ],
+          feedback: {
+            excellent: "Excellent pediatric communication! You validated his emotions, used age-appropriate language, gave hope about going home, and engaged him as a partner in his care. This approach builds cooperation.",
+            good: "Good start with age-appropriate communication. To improve: Specifically validate that missing home is hard, give him some control in the situation, and connect the medicine directly to his goal of going home.",
+            needsWork: "This approach needs improvement for pediatric patients. Avoid commanding language ('You have to take this'). Instead, validate emotions first, use age-appropriate explanations, give choices when possible, and connect treatment to his goals. Never force compliance without addressing feelings."
+          }
+        }
+      ]
+    },
+    {
+      title: "Confused Elderly Patient",
+      setting: "Medical Unit",
+      patientName: "Mr. Rodriguez",
+      patientAge: 82,
+      condition: "UTI with mild confusion, keeps trying to get out of bed",
+      mood: "agitated and confused about where he is",
+      steps: [
+        {
+          situation: "You find Mr. Rodriguez trying to climb out of bed. He says: 'I need to get to work! My boss will fire me if I'm late! Who are you? Why won't you let me leave?'",
+          goodResponses: [
+            "Mr. Rodriguez, I'm Sarah, your nurse. You're in the hospital right now getting better. You're safe here with us. Can you tell me about your work? What kind of job do you do?",
+            "Hello Mr. Rodriguez, I'm your nurse Sarah. I can see you're worried about work. You're in the hospital where we're helping you feel better. Tell me about your job - it sounds important to you.",
+            "My name is Sarah and I'm taking care of you, Mr. Rodriguez. You're safe here at the hospital. I can hear that your work is really important to you. What kind of work do you do?"
+          ],
+          feedback: {
+            excellent: "Excellent approach to confused patients! You introduced yourself, provided gentle reorientation, validated his work concerns, and redirected therapeutically. This maintains dignity while ensuring safety.",
+            good: "Good use of reorientation techniques. To strengthen your approach: Always introduce yourself first, use his name more frequently, and engage more deeply with his reality before redirecting (ask specific questions about his work).",
+            needsWork: "This approach needs significant improvement for confused patients. Never argue with or correct delusions directly ('You don't work anymore'). Instead: introduce yourself, use their name, gently reorient, validate their concerns, and redirect by engaging with their reality. Avoid showing frustration - confusion is frightening for patients."
+          }
+        }
+      ]
+    }
+  ];
+
+  const evaluateResponse = (response, step) => {
+    const lowerResponse = response.toLowerCase();
+    const goodIndicators = [
+      'understand', 'feel', 'normal', 'worried', 'anxious', 'scared', 
+      'help', 'support', 'together', 'talk', 'discuss', 'concerns',
+      'safe', 'comfortable', 'brave', 'strong', 'better', 'home'
+    ];
+    
+    const poorIndicators = [
+      "don't worry", "you'll be fine", "everything will be okay",
+      "calm down", "there's nothing to worry about", "just relax",
+      "it's not a big deal", "you're overreacting"
+    ];
+
+    const commandingLanguage = [
+      "you need to", "you have to", "you must", "just do", "stop"
+    ];
+
+    const hasGoodIndicators = goodIndicators.some(indicator => 
+      lowerResponse.includes(indicator)
+    );
+    
+    const hasPoorIndicators = poorIndicators.some(indicator => 
+      lowerResponse.includes(indicator)
+    );
+
+    const hasCommandingLanguage = commandingLanguage.some(phrase => 
+      lowerResponse.includes(phrase)
+    );
+
+    // More stringent evaluation
+    if (hasPoorIndicators || hasCommandingLanguage) return 'needsWork';
+    if (hasGoodIndicators && response.length > 50 && 
+        (lowerResponse.includes('i') || lowerResponse.includes('we')) &&
+        response.includes('?')) return 'excellent';
+    if (hasGoodIndicators && response.length > 30) return 'good';
+    return 'needsWork';
+  };
+
+  const handleSubmitResponse = () => {
+    const currentScenarioData = scenarios[currentScenario];
+    const currentStepData = currentScenarioData.steps[currentStep];
+    const evaluation = evaluateResponse(studentResponse, currentStepData);
+    
+    const newResponse = {
+      step: currentStep,
+      response: studentResponse,
+      evaluation: evaluation,
+      feedback: currentStepData.feedback[evaluation]
+    };
+
+    setResponses([...responses, newResponse]);
+    setShowFeedback(true);
+  };
+
+  const handleNextStep = () => {
+    setShowFeedback(false);
+    setStudentResponse('');
+    
+    if (currentStep < scenarios[currentScenario].steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else if (currentScenario < scenarios.length - 1) {
+      setCurrentScenario(currentScenario + 1);
+      setCurrentStep(0);
+      setResponses([]);
+    } else {
+      setIsComplete(true);
+    }
+  };
+
+  const handleRestart = () => {
+    setCurrentScenario(0);
+    setCurrentStep(0);
+    setResponses([]);
+    setStudentResponse('');
+    setShowFeedback(false);
+    setIsComplete(false);
+  };
+
+  const getOverallScore = () => {
+    if (responses.length === 0) return 0;
+    const points = responses.reduce((total, response) => {
+      switch(response.evaluation) {
+        case 'excellent': return total + 3;
+        case 'good': return total + 2;
+        case 'needsWork': return total + 1;
+        default: return total;
+      }
+    }, 0);
+    return Math.round((points / (responses.length * 3)) * 100);
+  };
+
+  if (isComplete) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white">
+        <div className="text-center mb-8">
+          <Award className="mx-auto h-16 w-16 text-green-600 mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Training Complete!</h1>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold text-green-800 mb-4">Your Overall Score: {getOverallScore()}%</h2>
+            <div className="space-y-4">
+              {responses.map((response, index) => (
+                <div key={index} className="bg-white p-4 rounded border">
+                  <div className="flex items-center mb-2">
+                    <CheckCircle className={`h-5 w-5 mr-2 ${
+                      response.evaluation === 'excellent' ? 'text-green-600' :
+                      response.evaluation === 'good' ? 'text-yellow-600' : 'text-red-600'
+                    }`} />
+                    <span className="font-medium">
+                      Scenario {Math.floor(index / 2) + 1}, Step {(index % 2) + 1}: {response.evaluation}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">{response.feedback}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="font-semibold text-blue-800 mb-3">Key Areas for Improvement Based on Your Performance:</h3>
+              <ul className="text-sm text-blue-700 space-y-2 text-left max-w-2xl mx-auto">
+                <li>• <strong>Therapeutic Communication:</strong> Always validate emotions before problem-solving. Use "I understand..." or "That sounds difficult..."</li>
+                <li>• <strong>Avoid False Reassurance:</strong> Never say "don't worry," "everything will be fine," or "you'll be okay" - these dismiss patient concerns</li>
+                <li>• <strong>Use Open-Ended Questions:</strong> Ask "What concerns you most?" rather than yes/no questions</li>
+                <li>• <strong>Patient-Centered Language:</strong> Use "I" statements ("I can see you're worried") rather than "you" commands ("you need to calm down")</li>
+                <li>• <strong>Age-Appropriate Communication:</strong> Adapt your language and approach to the patient's developmental stage</li>
+                <li>• <strong>Honesty with Compassion:</strong> Be truthful about limitations while showing you care</li>
+                <li>• <strong>Engage with Patient Reality:</strong> For confused patients, don't argue - validate and gently redirect</li>
+                <li>• <strong>Safety with Dignity:</strong> Address safety concerns while maintaining patient respect</li>
+              </ul>
+            </div>
+            <button
+              onClick={handleRestart}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center mx-auto"
+            >
+              <RefreshCw className="h-5 w-5 mr-2" />
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentScenarioData = scenarios[currentScenario];
+  const currentStepData = currentScenarioData.steps[currentStep];
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="text-center mb-8">
+        <MessageCircle className="mx-auto h-12 w-12 text-blue-600 mb-4" />
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Nursing Communication Training</h1>
+        <p className="text-gray-600">Practice therapeutic communication with virtual patients</p>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-blue-800 mb-4">
+          Scenario {currentScenario + 1}: {currentScenarioData.title}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <strong>Setting:</strong> {currentScenarioData.setting}
+          </div>
+          <div>
+            <strong>Patient:</strong> {currentScenarioData.patientName}, {currentScenarioData.patientAge} years old
+          </div>
+          <div className="md:col-span-2">
+            <strong>Condition:</strong> {currentScenarioData.condition}
+          </div>
+          <div className="md:col-span-2">
+            <strong>Patient Mood:</strong> {currentScenarioData.mood}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+        <div className="flex items-start mb-4">
+          <User className="h-6 w-6 text-gray-600 mr-3 mt-1" />
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">Situation:</h3>
+            <p className="text-gray-700">{currentStepData.situation}</p>
+          </div>
+        </div>
+      </div>
+
+      {!showFeedback ? (
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="response" className="block text-sm font-medium text-gray-700 mb-2">
+              Your Response:
+            </label>
+            <textarea
+              id="response"
+              rows={4}
+              value={studentResponse}
+              onChange={(e) => setStudentResponse(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Type how you would respond to this patient..."
+            />
+          </div>
+          <button
+            onClick={handleSubmitResponse}
+            disabled={studentResponse.trim().length === 0}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Submit Response
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 className="font-semibold text-yellow-800 mb-3">Your Response:</h3>
+            <p className="text-gray-700 italic">"{studentResponse}"</p>
+          </div>
+
+          <div className={`border rounded-lg p-6 ${
+            responses[responses.length - 1]?.evaluation === 'excellent' ? 'bg-green-50 border-green-200' :
+            responses[responses.length - 1]?.evaluation === 'good' ? 'bg-yellow-50 border-yellow-200' :
+            'bg-red-50 border-red-200'
+          }`}>
+            <h3 className="font-semibold mb-3">
+              Feedback: {responses[responses.length - 1]?.evaluation === 'excellent' ? 'Excellent!' :
+                        responses[responses.length - 1]?.evaluation === 'good' ? 'Good!' : 'Needs Improvement'}
+            </h3>
+            <p className="mb-4">{responses[responses.length - 1]?.feedback}</p>
+            
+            <div className="mt-4">
+              <h4 className="font-medium text-gray-800 mb-2">Examples of therapeutic responses:</h4>
+              <ul className="space-y-2">
+                {currentStepData.goodResponses.map((example, index) => (
+                  <li key={index} className="text-sm text-gray-600 bg-white p-3 rounded border">
+                    "{example}"
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <button
+            onClick={handleNextStep}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            {currentStep < scenarios[currentScenario].steps.length - 1 ? 'Next Step' :
+             currentScenario < scenarios.length - 1 ? 'Next Scenario' : 'Complete Training'}
+          </button>
+        </div>
+      )}
+
+      <div className="mt-8 text-center text-sm text-gray-500">
+        Scenario {currentScenario + 1} of {scenarios.length} • Step {currentStep + 1} of {scenarios[currentScenario].steps.length}
+      </div>
+    </div>
+  );
+};
+
+export default NursingCommunicationBot;
